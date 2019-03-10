@@ -32,5 +32,4 @@ def pull(symbol, full=False):
     data = pd.read_csv(url)
     #print(data)
     outputFile = "data/raw/" + ticker.upper() + ".csv"
-    #print(outputFile)
     data.to_csv(outputFile, index=False)
