@@ -15,14 +15,17 @@ def appendSMA(symbol, windowLength):
     data["valid"] = "N"
     data["sma"] = -1
 
-    for i in range(windowLength-1, count):
+    for i in range(0, count-windowLength+1):
         #print("i: ", i)
         sum = 0
-        for j in range(i-windowLength+1, i+1):
+        for j in range(i, i+windowLength):
             sum += data.iloc[j]["close"]
         data.iloc[i, data.columns.get_loc('sma')] = sum/windowLength
         data.iloc[i, data.columns.get_loc('valid')] = "Y"
     #print(data)
+
+    data = data[data.valid == 'Y']
+    data = data.drop(columns=['valid'])
 
     output = dataset[-9:-4]
     output = "data/enriched/" + output + ".SMA" + str(windowLength) + ".csv"
