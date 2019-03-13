@@ -15,12 +15,12 @@ def appendSMA(dataframe, window):
     dataframe[smaColumn] = -1
 
     for i in range(0, count-window+1):
-        #print("i: ", i)
+        print("i: " +  str(i) + " count: " + str(count)  + " window: " + str(window))
         sum = 0
         for j in range(i, i+window):
-            sum += dataframe.iloc[j]["close"]
-        dataframe.iloc[i, dataframe.columns.get_loc(smaColumn)] = sum/window
-        dataframe.iloc[i, dataframe.columns.get_loc('valid')] = "Y"
+            sum += dataframe.ix[j]["close"]
+        dataframe.ix[i, dataframe.columns.get_loc(smaColumn)] = sum/window
+        dataframe.ix[i, dataframe.columns.get_loc('valid')] = "Y"
     #print(data)
     dataframe = dataframe[dataframe.valid == 'Y']
     dataframe = dataframe.drop(columns=['valid'])

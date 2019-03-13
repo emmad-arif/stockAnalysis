@@ -51,6 +51,8 @@ def pull(ticker, rawDirectory, outputSize):
         return False
 
     data.to_csv(outputFile, index=False)
+    util.cutCsv(outputFile)
+
     print(ticker + " Pull Successful!")
     return True
 

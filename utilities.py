@@ -24,7 +24,7 @@ def applyIndicator(dataframe, indicator):
         return False
 
 # Deletes all entries before a certain date
-def cutCsv(path, date):
+def cutCsv(path, date= datetime.datetime.strptime("2010-01-01", '%Y-%m-%d').date()):
     dataframe = pd.read_csv(path)
     count = len(dataframe)
 
@@ -33,9 +33,10 @@ def cutCsv(path, date):
         if (datetime.datetime.strptime(dataframe.iloc[i]["timestamp"], '%Y-%m-%d').date()) < date:
             cut = i
             break
-        if cut != -1:
-            dataframe = dataframe[0:cut]
-            dataframe.to_csv(path, index=False)
+    if cut != -1:
+        dataframe = dataframe[0:cut]
+        dataframe.to_csv(path, index=False)
+        print("Cut Successful!")
 
 # Returns number of periods from start to end
 def periods(dataframe):
