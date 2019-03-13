@@ -10,15 +10,21 @@ import sys, os
 
 
 
-def pullAndEnrich(ticker, rawDirectory, enrichDirectory, *indicators):
+def pullAndEnrich(ticker, outputSize, rawDirectory, enrichDirectory, *indicators):
     ticker = ticker.upper()
-    pulled = pull(ticker, rawDirectory)
+    pulled = pull(ticker, rawDirectory, outputSize)
     if pulled:
         enrich(ticker, rawDirectory, enrichDirectory, *indicators)
 
 def enrich(ticker, rawDirectory, enrichDirectory, *indicators):
     rawFile = rawDirectory + ticker.upper() + ".csv"
     outputFile = enrichDirectory + ticker.upper() + ".enriched.csv"
+
+    if os.path.isfile(outputFile):
+        replace = input(outputFile + " already exists. Replace? (Y/N)\n")
+        if replace.upper() != "Y":
+            return True
+
     try:
         data = pd.read_csv(rawFile)
     except:
@@ -31,14 +37,14 @@ def enrich(ticker, rawDirectory, enrichDirectory, *indicators):
     print(ticker + " Enrich Successful!")
     return True
 
-def pull(ticker, rawDirectory):
+def pull(ticker, rawDirectory, outputSize):
     # default pull is "full". Another option is "compact"
     outputFile = rawDirectory + ticker.upper() + ".csv"
     if os.path.isfile(outputFile):
         replace = input(outputFile + " already exists. Replace? (Y/N)\n")
         if replace.upper() != "Y":
             return True
-    outputSize = "full"
+    #outputSize = "full"
     url = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=" + ticker + "&interval=5min&outputsize=" + outputSize + "&apikey=JN3OXB2JR2CV2RDO&datatype=csv"
     data = pd.read_csv(url)
     if errorCheck(data):

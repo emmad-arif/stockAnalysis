@@ -6,14 +6,7 @@ from matplotlib.dates import date2num, DayLocator, DateFormatter
 import pandas as pd
 
 
-def plot(ticker, *indicators):
-    path = ""
-    for file in os.listdir("data/enriched"):
-        if ticker.upper() in file:
-            path = "data/enriched/" + file
-    if path == "":
-        print("ERROR: plot.y - file not found")
-        return
+def plot(path, *indicators):
 
     with open(path) as f:
         s = f.read() + '\n'
@@ -28,9 +21,12 @@ def plot(ticker, *indicators):
     candlestick_ohlc(ax, my_file.as_matrix(), colorup='g', colordown='r', alpha=0.75)
     #ax.xaxis.set_major_locator(DayLocator())
     ax.xaxis.set_major_formatter(DateFormatter('%Y-%m-%d'))
-    if "sma" in indicators:
-        plotSMA(ax, my_file);
+    i = 0
+    colors = ['#000000', "#FFFF00", "#0000FF", "#7CFC00"]
+    for indicator in indicators:
+        if not indicator in my_file.columns:
+            print("Error in plot.py: " + indicator + " does not exist. Skipping.")
+            pass
+        ax.plot(my_file['timestamp'],my_file[indicator],colors[i],linewidth=2)
+        i += 1
     plt.show()
-
-def plotSMA(ax, my_file):
-    ax.plot(my_file['timestamp'],my_file['sma'],'#000000',linewidth=2)
