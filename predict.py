@@ -1,5 +1,6 @@
 import pandas as pd
-from scripts import pullData, plot, sma
+from scripts import pullData, plot
+from scripts.indicators import sma
 import sys
 
 if len(sys.argv) < 2:

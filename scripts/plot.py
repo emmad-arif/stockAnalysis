@@ -22,13 +22,15 @@ def plot(ticker, *indicators):
 
     my_file['timestamp'] = date2num(pd.to_datetime(my_file['timestamp']).tolist())
 
-    fig, ax=plt.subplots()
+    fig, ax=plt.subplots(figsize=(15,15))
 
 
     candlestick_ohlc(ax, my_file.as_matrix(), colorup='g', colordown='r', alpha=0.75)
     #ax.xaxis.set_major_locator(DayLocator())
     ax.xaxis.set_major_formatter(DateFormatter('%Y-%m-%d'))
     if "sma" in indicators:
-
-        ax.plot(my_file['timestamp'],my_file['sma'],'#e1edf9',linewidth=1.5)
+        plotSMA(ax, my_file);
     plt.show()
+
+def plotSMA(ax, my_file):
+    ax.plot(my_file['timestamp'],my_file['sma'],'#000000',linewidth=2)
