@@ -1,0 +1,1 @@
+PERCENT_CHANGE = 0.005 # i.e. 0.5%

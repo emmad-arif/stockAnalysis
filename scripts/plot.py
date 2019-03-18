@@ -1,4 +1,4 @@
-import io, os
+import io, os, sys
 
 import matplotlib.pyplot as plt
 from mpl_finance import candlestick_ohlc
@@ -6,7 +6,7 @@ from matplotlib.dates import date2num, DayLocator, DateFormatter
 import pandas as pd
 
 
-def plot(path, *indicators):
+def plot(ticker, path, indicators):
 
     with open(path) as f:
         s = f.read() + '\n'
@@ -15,7 +15,7 @@ def plot(path, *indicators):
 
     my_file['timestamp'] = date2num(pd.to_datetime(my_file['timestamp']).tolist())
 
-    fig, ax=plt.subplots(figsize=(15,15))
+    fig, ax=plt.subplots(figsize=(8,8))
 
 
     candlestick_ohlc(ax, my_file.as_matrix(), colorup='g', colordown='r', alpha=0.75)
@@ -25,8 +25,12 @@ def plot(path, *indicators):
     colors = ['#000000', "#FFFF00", "#0000FF", "#7CFC00"]
     for indicator in indicators:
         if not indicator in my_file.columns:
-            print("Error in plot.py: " + indicator + " does not exist. Skipping.")
+            print("\nError: Cannot plot " + indicator + " since it does not exist. Skipping.")
+            sys.stdout.flush()
             pass
-        ax.plot(my_file['timestamp'],my_file[indicator],colors[i],linewidth=2)
+        ax.plot(my_file['timestamp'],my_file[indicator],colors[i],linewidth=1.5)
         i += 1
+    ax.legend()
+    print("\nPlotting " + ticker + "\n")
+    sys.stdout.flush()
     plt.show()

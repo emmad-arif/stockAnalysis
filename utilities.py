@@ -1,6 +1,6 @@
 from __future__ import print_function
 import sys, os
-from scripts.indicators import sma, ema
+from scripts.indicators import sma, ema, rsi
 import utilities as util
 import pandas as pd
 import datetime
@@ -10,22 +10,30 @@ def printError(errorMessage):
 
 def applyIndicator(dataframe, indicator):
     if "sma" in indicator:
+        #print(indicator)
         window = int(indicator[3:])
         #error check here
         dataframe = sma.appendSMA(dataframe, window)
+
         return dataframe
     elif "ema" in indicator:
         window = int(indicator[3:])
         #error check here
         dataframe = ema.appendEMA(dataframe, window)
         return dataframe
+    elif "rsi" in indicator:
+        window = (indicator[3:])
+        if window == "":
+            dataframe = rsi.appendRSI(dataframe)
+        else:
+            dataframe = rsi.appendRSI(dataframe, int(window))
+        return dataframe
     else:
         util.printError("Invalid indicator: " + indicator)
-        return False
+        return dataframe
 
 # Deletes all entries before a certain date
-def cutCsv(path, date= datetime.datetime.strptime("2010-01-01", '%Y-%m-%d').date()):
-    dataframe = pd.read_csv(path)
+def cutCsv(dataframe, date= datetime.datetime.strptime("2015-01-01", '%Y-%m-%d').date()):
     count = len(dataframe)
 
     cut = -1
@@ -35,13 +43,18 @@ def cutCsv(path, date= datetime.datetime.strptime("2010-01-01", '%Y-%m-%d').date
             break
     if cut != -1:
         dataframe = dataframe[0:cut]
-        dataframe.to_csv(path, index=False)
-        print("Cut Successful!")
+        #print("Cut Successful!")
+    return dataframe
 
 # Returns number of periods from start to end
 def periods(dataframe):
     count = len(dataframe)
-    lastDate = datetime.datetime.strptime(dataframe.iloc[0]["timestamp"], '%Y-%m-%d').date()
-    firstDate = datetime.datetime.strptime(dataframe.iloc[count-1]["timestamp"], '%Y-%m-%d').date()
+    lastDate = datetime.datetime.strptime(dataframe.iloc[count-1]["timestamp"], '%Y-%m-%d').date()
+    firstDate = datetime.datetime.strptime(dataframe.iloc[0]["timestamp"], '%Y-%m-%d').date()
 
     return (lastDate - firstDate).days
+
+# Removes duplicates from list
+def removeDuplicates(lst):
+    lst = list(dict.fromkeys(lst))
+    return lst

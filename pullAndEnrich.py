@@ -10,15 +10,15 @@ import sys, os
 
 
 
-def pullAndEnrich(ticker, outputSize, rawDirectory, enrichDirectory, *indicators):
+def pullAndEnrich(ticker, outputSize, rawDirectory, enrichDirectory, indicators):
     ticker = ticker.upper()
     pulled = pull(ticker, rawDirectory, outputSize)
     if pulled:
-        enrich(ticker, rawDirectory, enrichDirectory, *indicators)
+        enrich(ticker, rawDirectory, enrichDirectory, indicators)
 
-def enrich(ticker, rawDirectory, enrichDirectory, *indicators):
-    rawFile = rawDirectory + ticker.upper() + ".csv"
-    outputFile = enrichDirectory + ticker.upper() + ".enriched.csv"
+def enrich(ticker, rawDirectory, enrichDirectory, indicators):
+    rawFile = rawDirectory # + ticker.upper() + ".csv"
+    outputFile = enrichDirectory # + ticker.upper() + ".enriched.csv"
 
     if os.path.isfile(outputFile):
         replace = input(outputFile + " already exists. Replace? (Y/N)\n")
@@ -28,38 +28,43 @@ def enrich(ticker, rawDirectory, enrichDirectory, *indicators):
     try:
         data = pd.read_csv(rawFile)
     except:
-        util.printError("Raw File not present. Enrich Failed.")
+        print("\n" + ticker + " raw file not present. Cannot enrich.")
+        sys.stdout.flush()
         return False
 
     for indicator in indicators:
         data = util.applyIndicator(data, indicator.lower())
     data.to_csv(outputFile, index=False)
-    print(ticker + " Enrich Successful!")
+    print("\n" + ticker + " enriched successfully.")
     return True
 
 def pull(ticker, rawDirectory, outputSize):
     # default pull is "full". Another option is "compact"
-    outputFile = rawDirectory + ticker.upper() + ".csv"
+    outputFile = rawDirectory # + ticker.upper() + ".csv"
     if os.path.isfile(outputFile):
-        replace = input(outputFile + " already exists. Replace? (Y/N)\n")
-        if replace.upper() != "Y":
-            return True
+        #print(outputFile + " already exists. To pull updated data, use -forcePull\n")
+        #sys.stdout.flush()
+        return True
+    #    if replace.upper() != "Y":
+    #        return True
     #outputSize = "full"
     url = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=" + ticker + "&interval=5min&outputsize=" + outputSize + "&apikey=JN3OXB2JR2CV2RDO&datatype=csv"
     data = pd.read_csv(url)
-    if errorCheck(data):
+    if errorCheck(data, ticker):
         return False
+    data = util.cutCsv(data)
+    data.iloc[:] = data.iloc[::-1].values
 
     data.to_csv(outputFile, index=False)
-    util.cutCsv(outputFile)
 
-    print(ticker + " Pull Successful!")
+
+    print("\n" + ticker + " pulled successfully.")
     return True
 
 
 # Find something less hacky???
-def errorCheck(dataframe):
+def errorCheck(dataframe, ticker):
     if "Error" in dataframe.to_string():
-        util.printError("Pull Failed.")
+        util.printError("\nERROR: " + ticker + " pull failed.")
         return True
     return False
