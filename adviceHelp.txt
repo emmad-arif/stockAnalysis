@@ -1,1 +1,28 @@
-advice help
+****************************************     HELP     ******************************************
+This tool predicts whether a stock is going up or down based on its last price.
+Usage: python advice.py [-TICKER] [-plot]* [-forcePull]*
+
+The tool pulls historic pricing data from 2015-01-01 onwards, and returns predictions along
+with historical accuracies, for 6 strategies:
+    1. Simple Moving Average Crossover
+    2. Exponential Moving Average Crossover
+    3. Relative Strength Index
+    4. SMA Long/Short Crossover
+    5. Linear Regression
+    6. Random Forest
+
+You can change parameters for these strategies in config.py
+Run the script for an explanation of accuracy calculations etc.
+
+Command Line Arguments:
+
+-TICKER         : Stock symbol (e.g. -MSFT)
+-plot           : Plot metrics used in chosen strategies (e.g. -plot)
+-forcePull      : Force pull pricing data, even if it already exists
+
+Example Commands:
+-python advice.py -AAPL
+-python advice.py -plot
+
+For an explanation of the strategies, please see documentation.
+**********************************************************************************************

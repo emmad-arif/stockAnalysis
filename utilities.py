@@ -33,7 +33,7 @@ def applyIndicator(dataframe, indicator):
         return dataframe
 
 # Deletes all entries before a certain date
-def cutCsv(dataframe, date= datetime.datetime.strptime("2015-01-01", '%Y-%m-%d').date()):
+def cutCsv(dataframe, date = datetime.datetime.strptime("2015-01-01", '%Y-%m-%d').date()):
     count = len(dataframe)
 
     cut = -1
@@ -43,11 +43,15 @@ def cutCsv(dataframe, date= datetime.datetime.strptime("2015-01-01", '%Y-%m-%d')
             break
     if cut != -1:
         dataframe = dataframe[0:cut]
+    #print(datetime.datetime.strptime(dataframe.iloc[0]["timestamp"], '%Y-%m-%d').date())
+    if (datetime.datetime.strptime(dataframe.iloc[0]["timestamp"], '%Y-%m-%d').date()) == datetime.datetime.today().date():
+        dataframe = dataframe[1:len(dataframe)]
         #print("Cut Successful!")
     return dataframe
 
 # Returns number of periods from start to end
-def periods(dataframe):
+def periods(path):
+    dataframe = pd.read_csv(path)
     count = len(dataframe)
     lastDate = datetime.datetime.strptime(dataframe.iloc[count-1]["timestamp"], '%Y-%m-%d').date()
     firstDate = datetime.datetime.strptime(dataframe.iloc[0]["timestamp"], '%Y-%m-%d').date()
@@ -58,3 +62,7 @@ def periods(dataframe):
 def removeDuplicates(lst):
     lst = list(dict.fromkeys(lst))
     return lst
+
+def printPartition():
+    print("*******************************************************************************")
+    sys.stdout.flush()

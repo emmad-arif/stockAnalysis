@@ -2,8 +2,6 @@ import pandas as pd
 import math
 import sys
 
-
-#return data
 def appendSMA(dataframe, window):
     #print(dataframe)
     sys.stdout.flush()
@@ -18,39 +16,15 @@ def appendSMA(dataframe, window):
         sys.stdout.flush()
 
     smaColumn = "sma" + str(window)
-    dataframe["valid"] = "N"
-    dataframe[smaColumn] = -1
-    """
-    dataframe['MA'] = dataframe.close.rolling(window=window).mean()
-    print(dataframe)
-    exit()
-    """
-    if window == 1:
-        dataframe[smaColumn] = dataframe['close']
-        dataframe = dataframe.drop(columns=['valid']).reset_index(drop=True)
-        print("SMA" + str(window) + " added to data")
-        return dataframe
+    #dataframe["valid"] = "N"
+    #dataframe[smaColumn] = -1
 
-    for i in range(window-1, count):
-        #print("i " + str(i) + "count " + str(count))
-        sum = 0
-        if (dataframe.ix[i-1][smaColumn] == -1):
-            for j in range(i-window+1, i+1):
-            #    print("j " + str(j))
-                sum += dataframe.ix[j]["close"]
-                #print(sum)
-            dataframe.loc[i, smaColumn] = sum/window
-            dataframe.loc[i, 'valid'] = "Y"
-        #print ('\x1b[2K\r' + str(i))
-        else:
-            newSum = (dataframe.ix[i-1][smaColumn] * window) - dataframe.ix[i-window]['close'] + dataframe.ix[i]['close']
-            dataframe.loc[i, smaColumn] = newSum/window
-            dataframe.loc[i, 'valid'] = "Y"
-    #print(data)
+    dataframe[smaColumn] = dataframe.close.rolling(window=window).mean()
+    #print(dataframe)
 
-    dataframe = dataframe[dataframe.valid == 'Y']
-    dataframe = dataframe.drop(columns=['valid']).reset_index(drop=True)
-    print("\nSMA" + str(window) + " added to data.")
+    dataframe = dataframe.iloc[window-1:]
+    dataframe = dataframe.reset_index(drop=True)
+    print("SMA" + str(window) + " added to data.")
     #print(dataframe)
     sys.stdout.flush()
     return dataframe

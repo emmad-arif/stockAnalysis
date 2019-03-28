@@ -1,7 +1,6 @@
 import pandas as pd
 from scripts.indicators import sma
 import sys
-#return data
 def appendEMA(dataframe, window):
     #check to see sma is present else add temporarily
     addedEMA = False
@@ -30,7 +29,7 @@ def appendEMA(dataframe, window):
     if addedEMA:
         dataframe = dataframe.drop(columns=["sma"+str(window)]).reset_index(drop=True)
     #print(data)
-    print("\nEMA" + str(window) + " added to data.")
+    print("EMA" + str(window) + " added to data.")
     sys.stdout.flush()
     return dataframe
 

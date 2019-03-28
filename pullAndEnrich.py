@@ -35,7 +35,7 @@ def enrich(ticker, rawDirectory, enrichDirectory, indicators):
     for indicator in indicators:
         data = util.applyIndicator(data, indicator.lower())
     data.to_csv(outputFile, index=False)
-    print("\n" + ticker + " enriched successfully.")
+    print(ticker + " enriched successfully.")
     return True
 
 def pull(ticker, rawDirectory, outputSize):
@@ -58,7 +58,7 @@ def pull(ticker, rawDirectory, outputSize):
     data.to_csv(outputFile, index=False)
 
 
-    print("\n" + ticker + " pulled successfully.")
+    print(ticker + " pulled successfully.")
     return True
 
 

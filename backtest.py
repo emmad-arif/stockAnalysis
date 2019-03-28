@@ -1,15 +1,12 @@
 import pullAndEnrich
 import utilities as util
-from scripts import plot as plt
+from scripts import plot as candlePlt
+from scripts import simplePlot as simplePlt
 import predict, sys, os
-from strategies import emaC, SMACrossover, smaLSC, RSI, randomStrategy
+from strategies import EMACrossover, SMACrossover, SMALSCrossover, RSI, randomStrategy
 import datetime # linear
 
-randomStrategyCount = 10
-
-##########################################################################################3
-
-
+""" Check CLI Validity """
 if len(sys.argv) < 2:
     file = open("backtestHelp.txt", "r")
     print (file.read())
@@ -27,11 +24,13 @@ rawPath = "data/raw/" + ticker + ".csv"
 
 indicators = []
 strategies = []
-plot = False
+plotIndicators = False
+plotBacktests = False
 forcePull = False
+display = False
+randomStrategyCount = 10
 
 """ Process command line arguments"""
-
 for i in range(2, len(sys.argv)):
     arg = sys.argv[i].lower()
 
@@ -64,30 +63,26 @@ for i in range(2, len(sys.argv)):
         continue
 
     if arg == "rsi":
-        strategies.append("rsi")
-        indicators.append("rsi")
+        rsiPeriod = sys.argv[i+1]
+        strategies.append("rsi" + rsiPeriod)
+        indicators.append("rsi" + rsiPeriod)
         continue
 
-    if arg == "plot":
-        plot = True
+    if arg == "plotbacktests" or arg == "plotbacktest":
+        plotBacktests = True
+
+    if arg == "plotindicators" or arg == "plotindicator":
+        plotIndicators = True
+
+    if arg == "display":
+        display = True
 
     if arg == "forcepull":
         forcePull = True
 
 """ Remove Duplicates from strategies and indicators """
-
 indicators = util.removeDuplicates(indicators)
 strategies = util.removeDuplicates(strategies)
-
-""""
-print("Strategies:")
-print(strategies)
-
-print("Indicators:")
-print(indicators)
-
-exit()
-"""
 
 if forcePull and os.path.isfile(rawPath):
     os.unlink(rawPath)
@@ -99,18 +94,34 @@ if os.path.isfile(enrichedPath):
 pullAndEnrich.pullAndEnrich(ticker, "full", rawPath, enrichedPath, indicators)
 
 
+""" Backtest Random strategy """
+util.printPartition()
+print("Simulating Random Strategy " + str(randomStrategyCount) + " times.")
+randomReturn = randomStrategy.runMultipleRandoms(enrichedPath, randomStrategyCount)
+print("\nRandom strategy would have returned: " + str(randomReturn) + "% over a period of " + str(round(util.periods(enrichedPath)/365, 2)) + " years (on average).")
+sys.stdout.flush()
+
+
+""" Backtest each strategy requested """
 for strategy in strategies:
+
     if "smac" in strategy:
         horizon = strategy[4:]
-        print("\nSimulating SMA Crossover Strategy with time horizon: " + horizon)
+        util.printPartition()
+        print("Simulating SMA Crossover Strategy with time horizon: " + horizon)
         sys.stdout.flush()
-        SMACrossover.SMACrossover().runBacktest(enrichedPath, int(horizon))
+        buys, sells = SMACrossover.SMACrossover().runBacktest(enrichedPath, int(horizon), display)
+        if plotBacktests:
+            simplePlt.plot(ticker, enrichedPath, buys, sells, "SMA Crossover (" + horizon + " day) Strategy Backtest")
 
     elif "emac" in strategy:
         horizon = strategy[4:]
-        print("\nSimulating EMA Crossover Strategy with time horizon: " + horizon)
+        util.printPartition()
+        print("Simulating EMA Crossover Strategy with time horizon: " + horizon)
         sys.stdout.flush()
-        emaC.emaCrossover(enrichedPath, int(horizon))
+        buys, sells = EMACrossover.EMACrossover().runBacktest(enrichedPath, int(horizon), display)
+        if plotBacktests:
+            simplePlt.plot(ticker, enrichedPath, buys, sells, "EMA Crossover (" + horizon + " day) Strategy Backtest")
 
     elif "smalsc" in strategy:
         i = 0
@@ -120,36 +131,22 @@ for strategy in strategies:
             i += 1
         longHorizon = strategy[6:i]
         shortHorizon = strategy[i+1:]
-        print("\nSimulating SMA Long/Short Crossover Strategy with long time horizon: " + longHorizon + " and short time horizon: " + shortHorizon)
+        util.printPartition()
+        print("Simulating SMA Long/Short Crossover Strategy with long time horizon: " + longHorizon + " and short time horizon: " + shortHorizon)
         sys.stdout.flush()
-        smaLSC.smaLongShortCrossover(enrichedPath, int(longHorizon), int(shortHorizon))
+        buys, sells = SMALSCrossover.SMALSCrossover().runBacktest(enrichedPath, int(longHorizon), int(shortHorizon), display)
+        if plotBacktests:
+            simplePlt.plot(ticker, enrichedPath, buys, sells, "SMA Long/Short (" + longHorizon + "/" + shortHorizon + " day) Strategy Backtest")
 
     elif "rsi" in strategy:
-        print("\nSimulating RSI Strategy")
-        RSI.RSI().runBacktest(enrichedPath)
+        horizon = strategy[3:]
+        util.printPartition()
+        print("Simulating RSI Strategy")
         sys.stdout.flush()
+        buys, sells = RSI.RSI().runBacktest(enrichedPath, int(horizon), display)
+        if plotBacktests:
+            simplePlt.plot(ticker, enrichedPath, buys, sells, "RSI (" + horizon + " day) Strategy Backtest")
 
-
-if len(strategy) > 0:
-    print("\nSimulating Random Strategy " + str(randomStrategyCount) + " times.")
-    randomReturn = randomStrategy.runMultipleRandoms(enrichedPath, randomStrategyCount)
-    print("\nRandom strategy would have returned: " + str(randomReturn) + "% over the same period of time (on average).")
-    sys.stdout.flush()
-
-if plot:
-    plt.plot(ticker, enrichedPath, indicators)
-    #print("WOOO")
-
-
-"""
-if "-smaLSC" in sys.argv:
-    predict.smaLongShortCrossover(enrichedPath, 200, 20)
-
-if "-emaC" in sys.argv:
-    predict.emaCrossover(enrichedPath, 10)
-
-if "-four" in sys.argv:
-    predict.fourCandleHammer(rawPath)
-"""
-#predict.smaCrossover(path, 20)
-#plot.plot(path, "sma5", "ema5")
+""" Plot indicators used for strategies above """
+if plotIndicators:
+    candlePlt.plot(ticker, enrichedPath, indicators)

@@ -22,7 +22,7 @@ def plot(ticker, path, indicators):
     #ax.xaxis.set_major_locator(DayLocator())
     ax.xaxis.set_major_formatter(DateFormatter('%Y-%m-%d'))
     i = 0
-    colors = ['#000000', "#FFFF00", "#0000FF", "#7CFC00"]
+    colors = ['#000000', "#FFFF00", "#0000FF", "#7CFC00", "#800080"]
     for indicator in indicators:
         if not indicator in my_file.columns:
             print("\nError: Cannot plot " + indicator + " since it does not exist. Skipping.")

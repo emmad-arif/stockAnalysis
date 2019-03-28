@@ -3,36 +3,70 @@ import utilities as util
 import math, sys
 import tradeUtilities as tradeUtil
 import config
+from datetime import timedelta
 
 class RSI:
-    balance = startingBalance = 1000000
-    unitsAvailable = 0
-    stopLoss = sys.maxsize
-    lastBuyIndex = -1
+    def __init__(self):
+        self.balance = self.startingBalance = 1000000
+        self.unitsAvailable = 0
+        self.stopLoss = sys.maxsize
+        self.takeProfit = sys.maxsize
+        self.lastBuyIndex = -1
+        self.saved = 0
+        self.buyDates = []
+        self.sellDates = []
 
-    def runBacktest(self, path):
+    """ Runs backtest """
+    def runBacktest(self, path, window, display):
         dataframe = pd.read_csv(path)
         count = len(dataframe)
 
-        for i in range(0, count):
-            heuristicResult = self.heuristic(dataframe, i)
-            if self.isLong() and dataframe.iloc[i]["close"] <= self.stopLoss:
-                self.balance, self.unitsAvailable = tradeUtil.stopLossSell(dataframe.iloc[i]["timestamp"], self.balance, dataframe.iloc[i]["close"], self.unitsAvailable)
 
-            elif heuristicResult <= 0.3 and not self.isLong() :
-                self.balance, self.unitsAvailable, self.stopLoss = tradeUtil.ordinaryBuyMax(dataframe.iloc[i]["timestamp"], self.balance, dataframe.iloc[i]["close"], self.unitsAvailable)
+        for i in range(1, count):
+
+            heuristicResult = self.heuristic(dataframe, window, i)
+            lastPrice = dataframe.iloc[i]["close"]
+            date = dataframe.iloc[i]["timestamp"]
+
+            if heuristicResult >= .7 and not self.isLong() :
+
+                """ Executing ORDINARY BUY order """
+                self.balance, self.unitsAvailable, self.stopLoss, self.takeProfit = tradeUtil.ordinaryBuyMax(dataframe.iloc[i]["timestamp"], self.balance, dataframe.iloc[i]["close"], self.unitsAvailable, display)
                 self.lastBuyIndex = i
+                self.buyDates.append(pd.to_datetime(date))
 
-            elif heuristicResult >= 0.7 and self.isLong():
-                self.balance, self.unitsAvailable = tradeUtil.ordinarySellMax(dataframe.iloc[i]["timestamp"], self.balance, dataframe.iloc[i]["close"], self.unitsAvailable)
+            elif self.isLong() and (lastPrice < self.stopLoss or lastPrice > self.takeProfit):
+                if lastPrice < self.stopLoss:
 
-        # Make sure last buy was closed --- fix this
+                    """ Executing STOP LOSS SELL order """
+                    self.balance, self.unitsAvailable = tradeUtil.stopLossSell(dataframe.iloc[i]["timestamp"], self.balance, self.stopLoss, self.unitsAvailable, display)
+                    diff1 = dataframe.iloc[i-1]["close"] - dataframe.iloc[i]["close"]
+                    diff2 = dataframe.iloc[i-1]["close"] - self.stopLoss
+                    frac = (diff2/diff1)*24
+                    self.sellDates.append(pd.to_datetime(date)-timedelta(hours=24-frac))
+
+                elif lastPrice > self.takeProfit:
+
+                    """ Executing TAKE PROFIT SELL order """
+                    self.balance, self.unitsAvailable = tradeUtil.takeProfitSell(dataframe.iloc[i]["timestamp"], self.balance, dataframe.iloc[i]["close"], self.unitsAvailable, display)
+                    self.sellDates.append(pd.to_datetime(date))
+
+
+                """ Transferring excess funds from balance to savings """
+                if self.balance > self.startingBalance:
+                    self.saved += self.balance - self.startingBalance
+                    self.balance = self.startingBalance
+
+        """ If last BUY order has no corresponding SELL order, do not include it in profit/loss calculations. """
         if self.isLong():
-            print("NOTE: Last BUY entry printed above is invalid. Please ignore.")
+            if display:
+                print("NOTE: Last BUY entry printed above was not closed, and is not factored in Profit/Loss calculation.")
             self.balance += dataframe.iloc[self.lastBuyIndex]["close"] * self.unitsAvailable
+            self.buyDates = self.buyDates[:-1]
 
+        self.balance = self.balance + self.saved
         returnPercentage = 100*((self.balance-self.startingBalance)/self.startingBalance)
-        period = util.periods(dataframe)/365
+        period = util.periods(path)/365
 
         avgReturnPercentage = round(returnPercentage/period, 2)
         period = round(period, 2)
@@ -40,42 +74,49 @@ class RSI:
         self.balance = round(self.balance, 2)
 
         print("\nReturn: " + str(returnPercentage) + "% over a period of " + str(period) + " years (" + str(avgReturnPercentage) + "% per annum)")
-        print("--------------------")
         sys.stdout.flush()
+        return self.buyDates, self.sellDates
 
+    """ Returns true if you position == long i.e. already bought this stock"""
     def isLong(self):
         if self.unitsAvailable > 0:
             return True
         return False
 
-    # 1 means buy, 0 means sell, -1 means stop loss sell
-    def heuristic(self, df, i=-1):
+    """ Returns >0.5 if current state signals BUY and <0.5 if SELL """
+    def heuristic(self, df, window, i=-1):
         if i == -1:
             i = len(df)-1
-        rsiValue = df.iloc[i]["rsi"]
+        rsiColumn = "rsi" + str(window)
+        rsiValue = df.iloc[i][rsiColumn]
         #print("RSI is " + str(rsiValue))
         return (rsiValue)/100
 
-    def historicAccuracy(self, df, nextNDays):
+    """ Returns % of time stocks upward/downward predictions are correct """
+    def historicAccuracy(self, df, window, nextNDays):
         count = len(df)
-        correctCount = 0
-        predictionCount = 0
+        upwardCorrectCount = 0
+        downwardCorrectCount = 0
+        upwardPredictionCount = 0
+        downwardPredictionCount = 0
+        rsiColumn = "rsi" + str(window)
         for i in range(0, count-nextNDays):
             priceToday = df.iloc[i]['close']
 
-            rsiValue = df.iloc[i]["rsi"]
+            rsiValue = df.iloc[i][rsiColumn]
             if rsiValue >= 70: # Predicting downward move soon
-                predictionCount += 1
+                downwardPredictionCount += 1
                 for j in range(i+1, i+1+nextNDays):
                     if (1-config.PERCENT_CHANGE)*priceToday > df.iloc[j]['close']:
-                        correctCount += 1
+                        downwardCorrectCount += 1
                         break
             elif rsiValue <= 30:
-                predictionCount += 1
-                for j in range(i+1, i+4):
+                upwardPredictionCount += 1
+                for j in range(i+1, i+1+nextNDays):
                     if (1+config.PERCENT_CHANGE)*priceToday <= (df.iloc[j]['close']):
                         #print("HERE " + priceToday + " " + df.iloc[j]['close'])
-                        correctCount += 1
+                        upwardCorrectCount += 1
                         break
-        correctPct = 100*(correctCount/(predictionCount))
-        return round(correctPct, 2)
+        upwardCorrectPct = 100*(upwardCorrectCount/(upwardPredictionCount))
+        downwardCorrectPct = 100*(downwardCorrectCount/(downwardPredictionCount))
+        return round(upwardCorrectPct, 2), round(downwardCorrectPct, 2)

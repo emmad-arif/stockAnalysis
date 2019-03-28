@@ -1,0 +1,32 @@
+
+****************************************     HELP     ******************************************
+This tool lets you backtest a number of trading strategies.
+Usage: python backtest.py [-TICKER] [-strategy]* [-plot]* [-startingBalance]* [-full]* [-forcePull]*
+
+The tool pulls historic pricing data from 2015-01-01 onwards, runs your chosen
+strategy/strategies, and outputs return statistics.
+
+Set percentage change parameter in config.py (explanation in that script).
+
+Command Line Arguments:
+
+-TICKER         : Stock symbol (e.g. -MSFT)
+-strategy       : Choose from the following 4 strategies:
+    [-smaC n]    : Simple Moving Average Crossover, where n is the time horizon in years (e.g. -smaC 5)
+    [-smaLSC m n]: Simple Moving Average Long Short Crossover, where m is the long time horizon,
+                   and n is the short time horizon in years (e.g. -smaLSC 100 5)
+    [-emaC n]    : Exponential Moving Average Crossover, where n is the time horizon in years (e.g. -emaC 5)
+    [-RSI]       : Relative Strength Index (e.g. -RSI)
+-plotIndicators  : Plot pricing data and metrics used in chosen strategies (e.g. -plotIndicators)
+-plotBacktests    : Plot BUY/SELL orders of backtest(s) (e.g. -plotBacktest)
+-startingBalance : [NOT YET IMPLEMENTED] Default starting balance is $1,000,000 (e.g. -2000000)
+-display         : Choose this option to display each trade made (e.g. -display)
+-forcePull      :  Force pull pricing data, even if it already exists
+
+Example Commands:
+-python backtest.py -AAPL -smaC 5
+-python backtest.py -MSFT -smaC 5 -smaLSC 100 5 -display -plotBacktests
+-python backtest.py -TSLA -emaC 5 -full
+
+For an explanation of the strategies, please see documentation.
+**********************************************************************************************
